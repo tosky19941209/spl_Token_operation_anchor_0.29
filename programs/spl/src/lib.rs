@@ -9,11 +9,11 @@ pub mod spl {
     use anchor_lang::system_program;
     use anchor_spl::{
         associated_token::{self, Create},
-        metadata::{create_master_edition_v3, create_metadata_accounts_v3},
-        token::{initialize_mint, mint_to, InitializeMint},
+        // metadata::{create_master_edition_v3, create_metadata_accounts_v3},
+        token::{initialize_mint, mint_to, InitializeMint, MintTo},
     };
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+    pub fn initialize(_ctx: Context<Initialize>) -> Result<()> {
         Ok(())
     }
 
@@ -55,6 +55,18 @@ pub mod spl {
                 token_program: _ctx.accounts.system_program.to_account_info(),
             },
         ))?;
+
+        mint_to(
+            CpiContext::new(
+                _ctx.accounts.mint_account.to_account_info(),
+                MintTo {
+                    authority: _ctx.accounts.signer.to_account_info(),
+                    mint: _ctx.accounts.mint_account.to_account_info(),
+                    to: _ctx.accounts.token_account.to_account_info(),
+                },
+            ),
+            amount,
+        )
     }
 }
 
