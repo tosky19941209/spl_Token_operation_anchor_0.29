@@ -97,4 +97,62 @@ describe("spl", () => {
     }
   });
 
+  
+  it("Freeze token!", async () => {
+
+
+    const tx = await program.methods.freezeToken()
+      .accounts({
+        mintToken: mintToken.publicKey,
+        tokenAccount,
+      })
+      .signers([])
+      .rpc();
+    console.log("Your transaction signature", tx);
+  });
+
+  it("Unfreeze token!", async () => {
+
+
+    const tx = await program.methods.unFreezeToken()
+      .accounts({
+        mintToken: mintToken.publicKey,
+        tokenAccount,
+      })
+      .signers([])
+      .rpc();
+    console.log("Your transaction signature", tx);
+  });
+
+  it("Burn token!", async () => {
+
+    try {
+      const tx = await program.methods.burnToken(new anchor.BN(10 ** 9 * 10))
+        .accounts({
+          mintToken: mintToken.publicKey,
+          tokenAccount,
+        })
+        .signers([])
+        .rpc();
+      console.log("Your transaction signature", tx);
+    } catch (error) {
+      console.log(error)
+    }
+
+  });
+
+  it("Close token!", async () => {
+
+
+    const tx = await program.methods.closeToken()
+      .accounts({
+        mintToken: mintToken.publicKey,
+        tokenAccount,
+      })
+      .signers([])
+      .rpc();
+    console.log("Your transaction signature", tx);
+  });
+
+
 });

@@ -139,6 +139,73 @@ pub mod spl {
 
         Ok(())
     }
+
+
+    pub fn burn_token(ctx: Context<BurnToken>,amount:u64)->Result<()>{
+        burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(), 
+                Burn{
+                    authority:ctx.accounts.signer.to_account_info(),
+                    from:ctx.accounts.token_account.to_account_info(),
+                    mint:ctx.accounts.mint_token.to_account_info()
+                }
+            ), 
+            amount
+        )?;
+        Ok(())
+    }
+
+    pub fn freeze_token(ctx: Context<FreezeToken>)->Result<()>{
+        
+        freeze_account(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(), 
+                FreezeAccount{
+                    account:ctx.accounts.token_account.to_account_info(),
+                    mint:ctx.accounts.mint_token.to_account_info(),
+                    authority:ctx.accounts.signer.to_account_info(),
+                }
+            )
+        )?;
+
+
+        Ok(())
+    }
+
+    pub fn un_freeze_token(ctx: Context<FreezeToken>)->Result<()>{
+        
+        thaw_account(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(), 
+                ThawAccount{
+                    account:ctx.accounts.token_account.to_account_info(),
+                    mint:ctx.accounts.mint_token.to_account_info(),
+                    authority:ctx.accounts.signer.to_account_info(),
+                }
+            )
+        )?;
+
+
+        Ok(())
+    }
+
+    pub fn close_token(ctx: Context<CloseToken>)->Result<()>{
+        
+        close_account(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(), 
+                CloseAccount{
+                    account:ctx.accounts.token_account.to_account_info(),
+                    destination:ctx.accounts.signer.to_account_info(),
+                    authority:ctx.accounts.signer.to_account_info(),
+                }
+            )
+        )?;
+
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -183,6 +250,40 @@ pub struct SetAuthorityToken<'info> {
     pub signer:Signer<'info>,
     #[account(mut)]
     pub new_signer:Signer<'info>,
+    #[account(mut)]
+    pub token_account:Account<'info,TokenAccount>,
+    pub token_program:Program<'info,Token>,
+}
+
+
+#[derive(Accounts)]
+pub struct BurnToken<'info> {
+    #[account(mut)]
+    pub mint_token:Account<'info,Mint>,
+    #[account(mut)]
+    pub signer:Signer<'info>,
+    #[account(mut)]
+    pub token_account:Account<'info,TokenAccount>,
+    pub token_program:Program<'info,Token>,
+}
+
+#[derive(Accounts)]
+pub struct FreezeToken<'info> {
+    #[account(mut)]
+    pub mint_token:Account<'info,Mint>,
+    #[account(mut)]
+    pub signer:Signer<'info>,
+    #[account(mut)]
+    pub token_account:Account<'info,TokenAccount>,
+    pub token_program:Program<'info,Token>,
+}
+
+#[derive(Accounts)]
+pub struct CloseToken<'info> {
+    #[account(mut)]
+    pub mint_token:Account<'info,Mint>,
+    #[account(mut)]
+    pub signer:Signer<'info>,
     #[account(mut)]
     pub token_account:Account<'info,TokenAccount>,
     pub token_program:Program<'info,Token>,
