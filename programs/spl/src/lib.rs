@@ -97,3 +97,18 @@ pub struct CreateToken<'info> {
     pub associate_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
 }
+
+#[derive(Accounts)]
+pub struct TransferToken<'info> {
+    #[account(mut)]
+    pub mint_account: Account<'info, Mint>,
+    #[account(mut)]
+    pub from_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub to_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+    pub associate_token_program: Program<'info, AssociatedToken>,
+}
