@@ -3,72 +3,90 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-declare_id!("9Bq9HL9iDuVywY7HdEiLPj1QWsM65VJv9DdtxmMwT9jL");
+
+declare_id!("GNL7w1U113Wh5P8ASakCGbt1VNK1qLah2i6EoaX7ddEc");
 
 #[program]
-pub mod spl {
+pub mod anchor_spl_token {
     use super::*;
-    use anchor_lang::solana_program::{rent, system_program};
+    use anchor_lang::system_program;
     use anchor_spl::{
-        associated_token::{self, Create},
-        token::{mint_to, InitializeMint, MintTo},
+        associated_token,
+        token::{
+            burn, close_account, freeze_account, initialize_mint, mint_to, set_authority,
+            spl_token::instruction::AuthorityType, thaw_account, transfer, Burn, CloseAccount,
+            FreezeAccount, InitializeMint, MintTo, SetAuthority, ThawAccount, Transfer,
+        },
     };
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn create_token(_ctx: Context<CreateToken>, decimals: u8, amount: u64) -> Result<()> {
-        use super::*;
-        use anchor_lang::system_program;
-        use anchor_spl::associated_token::AssociatedToken;
-        use anchor_spl::token::{initialize_mint, mint_to, InitializeMint, Mint, MintTo};
-
+    pub fn create_token(ctx: Context<CreateToken>, decimals: u8, amount: u64) -> Result<()> {
         system_program::create_account(
             CpiContext::new(
-                _ctx.accounts.system_program.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
                 system_program::CreateAccount {
-                    from: _ctx.accounts.signer.to_account_info(),
-                    to: _ctx.accounts.mint_token.to_account_info(),
+                    from: ctx.accounts.signer.to_account_info(),
+                    to: ctx.accounts.mint_token.to_account_info(),
                 },
             ),
             10_000_000,
             82,
-            _ctx.accounts.token_program.key,
+            ctx.accounts.token_program.key,
         )?;
 
         initialize_mint(
             CpiContext::new(
-                _ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
                 InitializeMint {
-                    mint: _ctx.accounts.mint_token.to_account_info(),
-                    rent: _ctx.accounts.rent.to_account_info(),
+                    mint: ctx.accounts.mint_token.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
                 },
             ),
             decimals,
-            _ctx.accounts.signer.key,
-            Some(_ctx.accounts.signer.key),
+            ctx.accounts.signer.key,
+            Some(ctx.accounts.signer.key),
         )?;
 
         associated_token::create(CpiContext::new(
-            _ctx.accounts.associate_token_program.to_account_info(),
+            ctx.accounts.associate_token_program.to_account_info(),
             associated_token::Create {
-                payer: _ctx.accounts.signer.to_account_info(),
-                associated_token: _ctx.accounts.associate_token_program.to_account_info(),
-                authority: _ctx.accounts.signer.to_account_info(),
-                mint: _ctx.accounts.mint_token.to_account_info(),
-                system_program: _ctx.accounts.system_program.to_account_info(),
-                token_program: _ctx.accounts.token_program.to_account_info(),
+                payer: ctx.accounts.signer.to_account_info(),
+                associated_token: ctx.accounts.token_account.to_account_info(),
+                authority: ctx.accounts.signer.to_account_info(),
+                mint: ctx.accounts.mint_token.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                token_program: ctx.accounts.token_program.to_account_info(),
             },
         ))?;
 
         mint_to(
             CpiContext::new(
-                _ctx.accounts.token_account.to_account_info(),
+                ctx.accounts.token_account.to_account_info(),
                 MintTo {
-                    authority: _ctx.accounts.signer.to_account_info(),
-                    mint: _ctx.accounts.mint_token.to_account_info(),
-                    to: _ctx.accounts.token_account.to_account_info(),
+                    authority: ctx.accounts.signer.to_account_info(),
+                    mint: ctx.accounts.mint_token.to_account_info(),
+                    to: ctx.accounts.token_account.to_account_info(),
+                },
+            ),
+            amount,
+        )?;
+        Ok(())
+    }
+
+    pub fn transer_token(ctx: Context<TransferToken>, amount: u64) -> Result<()> {
+        msg!(
+            "Started {:} tokens transfer from account {:} to {:}",
+            amount,
+            ctx.accounts.from_account.key(),
+            ctx.accounts.to_account.key()
+        );
+
+        transfer(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    authority: ctx.accounts.signer.to_account_info(),
+                    from: ctx.accounts.from_account.to_account_info(),
+                    to: ctx.accounts.to_account.to_account_info(),
                 },
             ),
             amount,
@@ -79,17 +97,12 @@ pub mod spl {
 }
 
 #[derive(Accounts)]
-pub struct Initialize {}
-
-#[derive(Accounts)]
 pub struct CreateToken<'info> {
-    ///CHECK: this is not dangerous
     #[account(mut)]
     pub mint_token: Signer<'info>,
-    ///CHECK: this is not dangerous
     #[account(mut)]
     pub signer: Signer<'info>,
-    ///CHECK: this is not dangerous
+    ///CHECK:
     #[account(mut)]
     pub token_account: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
@@ -101,14 +114,14 @@ pub struct CreateToken<'info> {
 #[derive(Accounts)]
 pub struct TransferToken<'info> {
     #[account(mut)]
-    pub mint_account: Account<'info, Mint>,
+    pub mint_token: Account<'info, Mint>,
     #[account(mut)]
     pub from_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub to_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub signer: Signer<'info>,
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
     pub associate_token_program: Program<'info, AssociatedToken>,
 }
